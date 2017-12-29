@@ -1,0 +1,43 @@
+language: node_js
+node_js:
+- '9'
+directories:
+- node_modules
+before_install:
+- openssl aes-256-cbc -K $encrypted_343897957601_key -iv $encrypted_343897957601_iv
+  -in id_rsa.enc -out ~/.ssh/id_rsa -d
+- mkdir -p  ~/.ssh/
+- chmod 600 ~/.ssh/id_rsa
+- echo -e "Host 123.207.252.230 \n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+install:
+- npm install
+before_script: 
+script:
+- npm run docs
+- cd ./docs
+- git init
+- git config user.name "${U_NAME}"
+- git config user.email "${U_EAMIL}"
+- git add .
+- git commit -m "Update Doc"
+- git push --force --quiet "https://${GH_TOKEN}@github.com/Raoul1996/koa-vote.git"
+  master:${P_BRANCH}
+- cd ../
+- npm prune --production
+- rm -rf ./docs
+- tar -jcf robotS.tar.bz2 *
+- scp robotS.tar.bz2 ubuntu@123.207.252.230:~/
+- ssh ubuntu@123.207.252.230 'mkdir -p /usr/share/nginx/html/robot && mv ./robotS.tar.bz2
+  /usr/share/nginx/html/robot'
+- ssh ubuntu@123.207.252.230 'cd /usr/share/nginx/html/robot && tar -jxf robotS.tar.bz2
+  && rm -rf robotS.tar.bz2'
+- ssh ubuntu@123.207.252.230 'pm2 stop app -f'
+- ssh ubuntu@123.207.252.230 'cd /usr/share/nginx/html/robot && pm2 start app.js -f'
+- ssh ubuntu@123.207.252.230 'pm2 show app'
+after_script: 
+after_success: 
+branches:
+  only:
+  - master
+env:
+  global: 
